@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on: [zookeeper]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on: [ kafka ]
+    entrypoint: [ "/bin/bash", "-c" ]
+    command: |
+      echo "Waiting for Kafka..." &&
+      cub kafka-ready -b kafka:29092 1 30 &&
+      sleep 5 &&
+      kafka-topics --bootstrap-server kafka:29092 --create --topic load-topic --partitions 2 --replication-factor 1 &&
+      kafka-topics --bootstrap-server kafka:29092 --create --topic reply-topic --partitions 2 --replication-factor 1 &&
+      kafka-topics --bootstrap-server kafka:29092 --describe --topic load-topic &&
+      kafka-topics --bootstrap-server kafka:29092 --describe --topic reply-topic
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    depends_on: [kafka]
+    ports:
+      - "8088:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  stub:
+    build: ./stub
+    depends_on: [ kafka ]
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    depends_on: [stub]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  influxdb:
+    image: influxdb:1.8.10
+    ports:
+      - "8086:8086"
+    environment:
+      INFLUXDB_DB: k6
+      INFLUXDB_HTTP_AUTH_ENABLED: "false"
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    depends_on: [prometheus, influxdb]
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+  k6:
+    build: ./k6
+    volumes:
+      - ./k6:/scripts
+    environment:
+      KAFKA_BROKERS: kafka:29092
+    entrypoint: [ "sleep", "infinity" ]
+

@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  kafka:
+    consumer:
+      enable-auto-commit: false
+    producer:
+      acks: all
+
+app:
+  topics:
+    in: load-topic
+    out: reply-topic
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    prometheus:
+      enabled: true
