@@ -1,35 +1,54 @@
 import { check } from "k6";
-import { Producer } from "k6/x/kafka";
+import {
+  Writer,
+  SchemaRegistry,
+  SCHEMA_TYPE_STRING,
+} from "k6/x/kafka";
 
-// Подключаемся к Kafka через переменную окружения
-const producer = new Producer({
-    brokers: (__ENV.BROKERS || "kafka-load-test-kafka-1:9092").split(','),
+// безопасно читаем __ENV
+const env = (typeof __ENV !== "undefined" && __ENV) || {};
+
+// брокеры и топик: либо из env, либо дефолты
+const brokers = String(env.KAFKA_BROKERS || "kafka:29092").split(",");
+const topic = env.KAFKA_TOPIC || "load-topic";
+
+// продюсер для Kafka
+const writer = new Writer({
+  brokers,
+  topic,
 });
 
-const topic = "input-topic";
+// клиент для сериализации строк
+const schemaRegistry = new SchemaRegistry();
 
 export let options = {
-    stages: [
-        { duration: "1m", target: 5 },  // 5 пользователей/итераций
-        { duration: "1m", target: 10 }, // 10 пользователей/итераций
-    ],
+  stages: [
+    { duration: "1m", target: 5 },
+    { duration: "1m", target: 10 },
+  ],
 };
 
 export default function () {
-    const message = {
-        id: Math.floor(Math.random() * 1_000_000),
-        uuid: crypto.randomUUID(),
-        isActive: Math.random() < 0.5,
-        about: "keep calm and do testing",
-    };
+  const message = {
+    id: Math.floor(Math.random() * 1_000_000),
+    about: "keep calm and do testing",
+  };
 
-    producer.produce({
-        topic: topic,
-        value: JSON.stringify(message),
-    });
+  // сериализуем строку в байты так, как ожидает xk6-kafka
+  const value = schemaRegistry.serialize({
+    data: JSON.stringify(message),
+    schemaType: SCHEMA_TYPE_STRING,
+  });
 
-    check(message, {
-        "id exists": (m) => m.id !== undefined,
-        "uuid exists": (m) => m.uuid !== undefined,
-    });
+  writer.produce({
+    messages: [
+      {
+        value,
+      },
+    ],
+  });
+
+  check(message, {
+    "id exists": (m) => m.id !== undefined,
+  });
 }

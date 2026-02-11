@@ -1,5 +1,4 @@
-org/example/loadtestingvtb/StubApplication.class
-org/example/loadtestingvtb/AppConfig.class
 org/example/loadtestingvtb/KafkaConsumer.class
 org/example/loadtestingvtb/KafkaProcessor.class
-org/example/loadtestingvtb/LoadTestingVtbApplication.class
+org/example/loadtestingvtb/StubApplication.class
+org/example/loadtestingvtb/AppConfig.class
