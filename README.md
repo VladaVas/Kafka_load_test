@@ -166,10 +166,10 @@ ___
   global:    
   scrape_interval: 15s  
   scrape_configs:    
-    job_name: "stub"
-    metrics_path: /actuator/prometheus
-    static_configs:
-      targets: ["stub:8080"]
+  job_name: "stub"
+  metrics_path: /actuator/prometheus
+  static_configs:
+  targets: ["stub:8080"]
 
 **Grafana:**
 
