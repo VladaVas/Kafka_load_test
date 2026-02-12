@@ -88,22 +88,22 @@
 
 Основная конфигурация находится в `stub/src/main/resources/application.yaml`:
 
-- **Kafka**:
+**Kafka**:
   - `spring.kafka.bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:29092}`
   - `spring.kafka.consumer.group-id: stub-group`
   - `spring.kafka.consumer.auto-offset-reset: earliest`
   - `spring.kafka.consumer.enable-auto-commit: false`
   - `spring.kafka.producer.acks: all`
 
-- **Сервер**:
+  **Сервер**:
   - `server.port: 8080`
   - `server.address: 0.0.0.0` (доступен внутри Docker-сети)
 
-- **Бизнес-настройки**:
+  **Бизнес-настройки**:
   - `app.topics.in: load-topic` — входной топик обработчика.
   - `app.topics.out: reply-topic` — выходной топик обработчика.
 
-- **Actuator / Prometheus**:
+  **Actuator / Prometheus**:
   - Открыты эндпоинты `health`, `info`, `metrics`, `prometheus`.
   - Включён export в Prometheus.
 
@@ -124,39 +124,41 @@
 
 Файл `k6/script.js` описывает сценарий нагрузки.
 
-Главные моменты:
+### Главные моменты:
 
-- Импорт:
+- **Импорт:**
   import { Writer, SchemaRegistry, SCHEMA_TYPE_STRING } from "k6/x/kafka";
 
- Чтение окружения:
+- **Чтение окружения:**
  
  - const env = (typeof __ENV !== "undefined" && __ENV) || {};
  - const brokers = String(env.KAFKA_BROKERS || "kafka:29092").split(",");
  - const topic = env.KAFKA_TOPIC || "load-topic";
 
-Создание продюсера:
+- **Создание продюсера:**
 
  - const writer = new Writer({    brokers,    topic,  });
 
-Сценарий нагрузки:
+- **Сценарий нагрузки:**
 
  - export let options = {    stages: [      { duration: "1m", target: 5 },      { duration: "1m", target: 10 },    ],  };
-   
-Основная функция:
+
+ ___
+ 
+### Основная функция:
 
 - Строит объект message с нужными полями;
 - Сериализует его в строку и далее в байты через SchemaRegistry.serialize с SCHEMA_TYPE_STRING;
 - Отправляет через writer.produce({ messages: [...] }).
 
-xk6-kafka интегрируется с k6 и предоставляет:
+### xk6-kafka интегрируется с k6 и предоставляет:
 
 - Объекты Writer, Reader, Connection, SchemaRegistry;
 - Собственные метрики Kafka (ошибки продюсера/консьюмера и т.п.).
 
-Prometheus и Grafana
+### Prometheus и Grafana:
 
-Prometheus:
+**Prometheus:**
 
 Файл prometheus/prometheus.yml:
   global:    
@@ -167,43 +169,47 @@ Prometheus:
     static_configs:
      - targets: ["stub:8080"]
 
-Grafana:
+**Grafana:**
 
-- grafana/provisioning/datasources/datasources.yml:
+grafana/provisioning/datasources/datasources.yml:
  - datasource Prometheus (http://prometheus:9090);
  - datasource InfluxDB-k6 (http://influxdb:8086, база k6).
 
 grafana/provisioning/dashboards/dashboards.yml:
 - Провайдер для дашбордов (можно добавлять JSON-файлы дашбордов в эту директорию).
 
-Как запустить стенд и тест:
+___
 
-1. Собрать stub
+## Как запустить стенд и тест:
+
+1. **Собрать stub**
  - cd stub
  - mvn clean package -DskipTests
  - cd ..
 
-2. Поднять все сервисы
+2. **Поднять все сервисы**
  Из корня проекта:
  - docker compose build
  - docker compose up -d
  - docker compose ps
 Kafka и stub должны быть в состоянии Up.
 
-3. Запустить тест k6
+3. **Запустить тест k6**
 Простой запуск без InfluxDB:
  - docker compose exec k6 k6 run /scripts/script.js
 Запуск с записью метрик в InfluxDB:
  - docker compose exec k6 k6 run /scripts/script.js --out influxdb=http://influxdb:8086/k6
 При высокой нагрузке InfluxDB может вернуть 413 Request Entity Too Large — для демонстрации достаточно уменьшить длительность (--duration 10s) и количество VUs.
 
-4. Проверка работы
+4. **Проверка работы**
 Логи stub:
  - docker compose logs -f stub
 Kafka UI:
  - http://localhost:8088
 
-Проверить, что:
+---
+
+## Проверить, что:
 
  - в load-topic приходят сообщения от k6;
  - в reply-topic появляются обработанные сообщения от stub.
@@ -215,7 +221,10 @@ Grafana:
 http://localhost:3000
 (логин/пароль: admin / admin).
 
-Итог
+___
+
+## Итог
+
 Этот репозиторий — готовый мини-стенд для нагрузочного тестирования Kafka и потребляющего сервиса:
  - k6 генерирует нагрузку;
  - Kafka принимает и маршрутизирует сообщения;
