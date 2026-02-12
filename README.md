@@ -169,7 +169,7 @@ ___
     job_name: "stub"
     metrics_path: /actuator/prometheus
     static_configs:
-       targets: ["stub:8080"]
+      targets: ["stub:8080"]
 
 **Grafana:**
 
@@ -211,9 +211,7 @@ Kafka и stub должны быть в состоянии Up.
 Kafka UI:
  - http://localhost:8088
 
----
-
-## Проверить, что:
+### Проверить, что:
 
  - в load-topic приходят сообщения от k6;
  - в reply-topic появляются обработанные сообщения от stub.
