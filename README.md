@@ -128,31 +128,31 @@ ___
 ### Главные моменты:
 
 - **Импорт:**
-  import { Writer, SchemaRegistry, SCHEMA_TYPE_STRING } from "k6/x/kafka";
+  `import { Writer, SchemaRegistry, SCHEMA_TYPE_STRING } from "k6/x/kafka"`;
 
 - **Чтение окружения:**
  
- - const env = (typeof __ENV !== "undefined" && __ENV) || {};
- - const brokers = String(env.KAFKA_BROKERS || "kafka:29092").split(",");
- - const topic = env.KAFKA_TOPIC || "load-topic";
+ - `const env = (typeof __ENV !== "undefined" && __ENV) || {}`;
+ - `const brokers = String(env.KAFKA_BROKERS || "kafka:29092").split(",")`;
+ - `const topic = env.KAFKA_TOPIC || "load-topic"`;
 
 - **Создание продюсера:**
 
- - const writer = new Writer({    brokers,    topic,  });
+ - `const writer = new Writer({    brokers,    topic,  })`;
 
 - **Сценарий нагрузки:**
 
- - export let options = {    stages: [      { duration: "1m", target: 5 },      { duration: "1m", target: 10 },    ],  };
+ - `export let options = {    stages: [      { duration: "1m", target: 5 },      { duration: "1m", target: 10 },    ],  }`;
  
 ### Основная функция:
 
 - Строит объект message с нужными полями;
-- Сериализует его в строку и далее в байты через SchemaRegistry.serialize с SCHEMA_TYPE_STRING;
-- Отправляет через writer.produce({ messages: [...] }).
+- Сериализует его в строку и далее в байты через `SchemaRegistry.serialize` с `SCHEMA_TYPE_STRING`;
+- Отправляет через `writer.produce({ messages: [...] })`.
 
 ### xk6-kafka интегрируется с k6 и предоставляет:
 
-- Объекты Writer, Reader, Connection, SchemaRegistry;
+- Объекты `Writer`, `Reader`, `Connection`, `SchemaRegistry`;
 - Собственные метрики Kafka (ошибки продюсера/консьюмера и т.п.).
 
 ___
@@ -163,22 +163,22 @@ ___
 
 Файл prometheus/prometheus.yml:
 
-  global:    
-  scrape_interval: 15s  
-  scrape_configs:    
-  job_name: "stub"
-  metrics_path: /actuator/prometheus
-  static_configs:
-  targets: ["stub:8080"]
+  `global:
+    scrape_interval: 15s
+   scrape_configs:
+    - job_name: "stub"
+      metrics_path: /actuator/prometheus
+      static_configs:
+        - targets: ["stub:8080"]`
 
 **Grafana:**
 
-grafana/provisioning/datasources/datasources.yml:
+`grafana/provisioning/datasources/datasources.yml`:
 
- - datasource Prometheus (http://prometheus:9090);
- - datasource InfluxDB-k6 (http://influxdb:8086, база k6).
+ - `datasource Prometheus (http://prometheus:9090)`;
+ - `datasource InfluxDB-k6 (http://influxdb:8086, база k6)`.
 
-grafana/provisioning/dashboards/dashboards.yml:
+`grafana/provisioning/dashboards/dashboards.yml`:
 
 - Провайдер для дашбордов (можно добавлять JSON-файлы дашбордов в эту директорию).
 
@@ -187,40 +187,40 @@ ___
 ## Как запустить стенд и тест:
 
 1. **Собрать stub**
- - cd stub
- - mvn clean package -DskipTests
- - cd ..
+ - `cd stub`
+ - `mvn clean package -DskipTests`
+ - `cd ..`
 
 2. **Поднять все сервисы**
  Из корня проекта:
- - docker compose build
- - docker compose up -d
- - docker compose ps
+ - `docker compose build`
+ - `docker compose up -d`
+ - `docker compose ps`
 Kafka и stub должны быть в состоянии Up.
 
 3. **Запустить тест k6**
 Простой запуск без InfluxDB:
- - docker compose exec k6 k6 run /scripts/script.js
+ - `docker compose exec k6 k6 run /scripts/script.js`
 Запуск с записью метрик в InfluxDB:
- - docker compose exec k6 k6 run /scripts/script.js --out influxdb=http://influxdb:8086/k6
-При высокой нагрузке InfluxDB может вернуть 413 Request Entity Too Large — для демонстрации достаточно уменьшить длительность (--duration 10s) и количество VUs.
+ - `docker compose exec k6 k6 run /scripts/script.js --out influxdb=http://influxdb:8086/k6`
+При высокой нагрузке InfluxDB может вернуть `413 Request Entity Too Large` — для демонстрации достаточно уменьшить длительность (`--duration 10s`) и количество VUs.
 
 4. **Проверка работы**
 Логи stub:
- - docker compose logs -f stub
+ - `docker compose logs -f stub`
 Kafka UI:
- - http://localhost:8088
+ - `http://localhost:8088`
 
 ### Проверить, что:
 
- - в load-topic приходят сообщения от k6;
- - в reply-topic появляются обработанные сообщения от stub.
+ - в `load-topic` приходят сообщения от k6;
+ - в `reply-topic` появляются обработанные сообщения от stub.
 
 Prometheus:
-http://localhost:9090
+`http://localhost:9090`
 
 Grafana:
-http://localhost:3000
+`http://localhost:3000`
 (логин/пароль: admin / admin).
 
 ___
