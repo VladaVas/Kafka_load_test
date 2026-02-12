@@ -3,6 +3,7 @@
 - k6 + xk6-kafka
 - Spring Boot stub-сервиса
 - Prometheus + Grafana + InfluxDB
+___
 
 ## Архитектура стенда
 
@@ -161,6 +162,7 @@
 **Prometheus:**
 
 Файл prometheus/prometheus.yml:
+
   global:    
   scrape_interval: 15s  
   scrape_configs:    
@@ -172,10 +174,12 @@
 **Grafana:**
 
 grafana/provisioning/datasources/datasources.yml:
+
  - datasource Prometheus (http://prometheus:9090);
  - datasource InfluxDB-k6 (http://influxdb:8086, база k6).
 
 grafana/provisioning/dashboards/dashboards.yml:
+
 - Провайдер для дашбордов (можно добавлять JSON-файлы дашбордов в эту директорию).
 
 ___
