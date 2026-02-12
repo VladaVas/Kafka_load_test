@@ -143,8 +143,6 @@ ___
 - **Сценарий нагрузки:**
 
  - export let options = {    stages: [      { duration: "1m", target: 5 },      { duration: "1m", target: 10 },    ],  };
-
- ___
  
 ### Основная функция:
 
@@ -157,7 +155,9 @@ ___
 - Объекты Writer, Reader, Connection, SchemaRegistry;
 - Собственные метрики Kafka (ошибки продюсера/консьюмера и т.п.).
 
-### Prometheus и Grafana:
+___
+
+## Prometheus и Grafana:
 
 **Prometheus:**
 
@@ -166,10 +166,10 @@ ___
   global:    
   scrape_interval: 15s  
   scrape_configs:    
-  - job_name: "stub"
+    job_name: "stub"
     metrics_path: /actuator/prometheus
     static_configs:
-     - targets: ["stub:8080"]
+       targets: ["stub:8080"]
 
 **Grafana:**
 
